@@ -1,0 +1,115 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/ioctl.h>
+#include <linux/input.h>
+
+
+#define  NODE_EXP                  "/dev/7seg_led"
+
+#define  SEG_7_LED_ON              1
+#define  SEG_7_LED_WRITE           2
+#define  SEG_7_LED_CLEAR           3
+#define  SEG_7_LED_OFF             4
+
+
+
+int seg7()
+{
+	int exp_dev= 0;
+   	 int res=0,i;
+
+	exp_dev = open(NODE_EXP, O_RDWR);
+    if (exp_dev < 0){
+	fprintf(stderr, "Open error: %s\n", NODE_EXP);
+	return 1;
+    }
+ 
+                if (res = ioctl(exp_dev,SEG_7_LED_ON, NULL) < 0 ){
+                    printf("%d---> Error in switching OFF the LED \r\n",res);
+                    close(exp_dev);
+                    return 1;
+                }
+
+	   	if (res=ioctl(exp_dev,SEG_7_LED_WRITE, 0x1234) < 0 ){
+		    printf("%d---> Error in writing to the 7-Seg LED \r\n",res);
+		    close(exp_dev);
+		    return 1;
+		}
+		sleep(5);
+		if (res=ioctl(exp_dev,SEG_7_LED_WRITE, 1234) < 0 ){
+		    printf("%d---> Error in writing to the 7-Seg LED \r\n",res);
+		    close(exp_dev);
+		    return 1;
+		}
+		printf ("Press any key to exit from the program\n");
+		getchar();
+                if (res=ioctl(exp_dev,SEG_7_LED_CLEAR, NULL) < 0 ){
+                    printf("%d---> Error in Clearing the LED \r\n",res);
+                    close(exp_dev);
+                    return 1;
+                }
+                if (res=ioctl(exp_dev,SEG_7_LED_OFF, NULL) < 0 ){
+                    printf("%d---> Error in switching off  the LED \r\n",res);
+                    close(exp_dev);
+                    return 1;
+                }
+
+    close(exp_dev);
+
+
+
+
+}
+
+int main()
+{
+
+	int fd,s;
+	char buff[256] = "Name";
+	int i,rb,j;
+	j=1;        
+	struct input_event ev;
+        struct input_absinfo ab;
+
+	if ((fd = open("/dev/input/touchscreen0", O_RDONLY)) < 0) 
+	{
+		printf ("Error Opening the Device\n");
+                return 1;
+    }
+
+	ioctl(fd, EVIOCGNAME(sizeof(buff)), buff);
+	printf("Touch Input device name: \"%s\"\n", buff);
+
+        for (i = 0; i < 1000 && j!=0 ; i++)
+	{
+	
+        	rb=read(fd,&ev,sizeof(struct input_event));
+
+	printf ("After read\n");
+		if ((ev.type == 1) && (ev.code == 330))
+		{
+		printf ("Touch Event = %d\n",ev.code);
+		}
+
+		if ((ev.type == 3) && (ev.code == 0))
+		{
+			printf ("X Value  = %d\n",ev.value);
+		}
+		if ((ev.type == 3) && (ev.code == 1))
+		{
+			printf ("Y Value  = %d\n",ev.value);
+		}
+		if ((ev.type == 3) && (ev.code == 24))
+		{
+			printf ("Touch Pressure  = %d\n",ev.value);
+			j=ev.value;
+		}
+			
+	}
+	s=seg7();
+	 
+	return 0;
+
+}
